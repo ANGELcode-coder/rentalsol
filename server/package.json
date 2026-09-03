@@ -1,0 +1,26 @@
+{
+  "name": "smooth-server",
+  "version": "1.0.0",
+  "description": "SMOOTH REST API (Express + MongoDB)",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "seed": "node src/seed/seed.js",
+    "test": "node --test"
+  },
+  "keywords": [
+    "smooth",
+    "cameroon",
+    "real-estate",
+    "marketplace"
+  ],
+  "license": "UNLICENSED",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "mongoose": "^9.9.4"
+  }
+}

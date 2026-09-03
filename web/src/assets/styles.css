@@ -1,0 +1,11 @@
+:root {
+  --smooth-green: #1b4d3e;
+  --smooth-brown: #7a5c43;
+  --smooth-gold: #c9a227;
+  --smooth-accent: #b02418;
+  --smooth-neutral: #f5f2ec;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--smooth-neutral); color: #1a1a1a; }
