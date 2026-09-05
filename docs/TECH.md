@@ -111,16 +111,37 @@ smooth/
 | Module | Status | Files |
 |---|---|---|
 | **Database models** | ✅ COMPLETE (Trello DB-1..DB-11 in DONE) | `server/src/models/*.js`, `config/constants.js`, `utils/generateRef.js`, `seed/seed.js` |
-| Backend API | ⬜ Pending (BE-1..BE-18) | `server/src/routes|controllers|middleware/` |
+| Backend API | ✅ COMPLETE (BE-1..BE-18) | `server/src/routes\|controllers\|middleware\|utils\|spec/` |
 | Web frontend | ⬜ Pending (FE-1..FE-19) | `web/src/` |
 | Mobile app | ⬜ Pending (MO-1..MO-15) | `mobile/lib/` |
 | Integration & QA | ⬜ Pending (QA-1..QA-9) | — |
+
+### Backend endpoints (all mounted in `server/src/app.js`)
+
+| Route group | Notes |
+|---|---|
+| `/api/v1/auth` | register, login, me, forgot/reset password (rate-limited 15/15min) |
+| `/api/v1/users` | profile get/update |
+| `/api/v1/admin` | users, listings, reviews, tickets moderation + stats (overview/revenue/listings) |
+| `/api/v1/listings` | browse/filters, CRUD (owner/agent), `/stats/mine`, `/enquiry` |
+| `/api/v1/services` | `/categories` (bilingual), providers browse + own profile |
+| `/api/v1/bookings` | create (BOK ref), status lifecycle, `/mine`, `/providers/mine` |
+| `/api/v1/concierge` | create (CON ref), `/mine`, `/providers/mine`, status/assign |
+| `/api/v1/jobs` | browse/post, apply, applications + status (employer) |
+| `/api/v1/payments` | initiate (MTN/Orange, simulated), confirm, webhook, receipt |
+| `/api/v1/reviews` | create, `/target/:type/:id` w/ aggregated avg, `/mine` |
+| `/api/v1/notifications` | list, unread-count, mark read / read-all |
+| `/api/v1/tickets` | create (TCK ref), thread replies, admin status |
+| `/api/v1/uploads` | multipart upload (multer) → Cloudinary or local `/uploads` fallback |
+| `/api/v1/docs.json` | OpenAPI 3.0 spec (61 paths) for Postman/Swagger import |
 
 ### Verified
 - ✅ Server boots (Express on :5000, graceful when Mongo offline).
 - ✅ 12 models import & compile (`model.init()` clean).
 - ✅ Web production build passes (`npm run build`).
-- ✅ Dependencies: express, mongoose@9, cors, dotenv, bcryptjs.
+- ✅ All 18 BE controllers/routes import clean; unauthenticated hits return 401 envelope; injected `$` operators sanitized (NoSQL injection neutralized).
+- ✅ Helmet security headers, global + auth + strict rate limits, uniform error envelope.
+- ✅ Dependencies: express, mongoose@9, cors, dotenv, bcryptjs, jsonwebtoken, express-rate-limit, helmet, express-mongo-sanitize, multer, cloudinary.
 
 ---
 

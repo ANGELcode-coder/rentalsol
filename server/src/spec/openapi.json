@@ -1,0 +1,469 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "SMOOTH API",
+    "version": "1.0.0",
+    "description": "Cameroon all-in-one platform API (EN/FR). Base URL: http://localhost:5000/api/v1. Money values are integers in XAF. Responses use the envelope { success, data, message?, meta? }.",
+    "contact": { "name": "SMOOTH Team" }
+  },
+  "servers": [{ "url": "http://localhost:5000/api/v1", "description": "Local development" }],
+  "tags": [
+    { "name": "auth", "description": "Registration, login, password reset" },
+    { "name": "users", "description": "Profile management" },
+    { "name": "listings", "description": "Real estate listings (rent/sale)" },
+    { "name": "services", "description": "Home services & providers" },
+    { "name": "bookings", "description": "Service bookings" },
+    { "name": "concierge", "description": "Concierge & errand requests" },
+    { "name": "jobs", "description": "Job marketplace" },
+    { "name": "payments", "description": "MTN / Orange Money payments" },
+    { "name": "reviews", "description": "Ratings & reviews" },
+    { "name": "notifications", "description": "User notifications" },
+    { "name": "tickets", "description": "Support tickets" },
+    { "name": "uploads", "description": "File uploads" },
+    { "name": "admin", "description": "Admin moderation & stats" }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": { "type": "http", "scheme": "bearer", "bearerFormat": "JWT" }
+    },
+    "schemas": {
+      "Envelope": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "data": {},
+          "message": { "type": "string" },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "page": { "type": "integer" },
+              "limit": { "type": "integer" },
+              "total": { "type": "integer" },
+              "pages": { "type": "integer" }
+            }
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": false },
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": { "type": "string", "example": "VALIDATION" },
+              "message": { "type": "string" },
+              "fields": { "type": "object" }
+            }
+          }
+        }
+      },
+      "RegisterInput": {
+        "type": "object",
+        "required": ["name", "email", "password", "role", "language", "phone"],
+        "properties": {
+          "name": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "password": { "type": "string", "minLength": 8 },
+          "phone": { "type": "string", "example": "+237670000000" },
+          "role": { "type": "string", "enum": ["client", "owner", "agent", "provider", "employer"] },
+          "language": { "type": "string", "enum": ["en", "fr"] },
+          "bio": { "type": "string" }
+        }
+      },
+      "LoginInput": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "password": { "type": "string" }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": ["auth"],
+        "summary": "Health check",
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "Register a new user (pending status until verified)",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RegisterInput" } } }
+        },
+        "responses": { "201": { "description": "Created" }, "422": { "$ref": "#/components/responses/Error" } }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "Login, returns JWT (7d)",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LoginInput" } } }
+        },
+        "responses": { "200": { "description": "OK" }, "401": { "$ref": "#/components/responses/Error" } }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "tags": ["auth"],
+        "summary": "Current user profile (JWT)",
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/auth/forgot-password": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "Request password reset email",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["email"], "properties": { "email": { "type": "string" } } } } }
+        },
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/auth/reset-password": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "Reset password with token",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["token", "password"], "properties": { "token": { "type": "string" }, "password": { "type": "string" } } } } }
+        },
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/users/me": {
+      "get": { "tags": ["users"], "summary": "Get my profile (JWT)", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "OK" } } },
+      "put": { "tags": ["users"], "summary": "Update my profile (JWT)", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/listings": {
+      "get": {
+        "tags": ["listings"],
+        "summary": "Browse active listings (filters: q, city, status, category, bedrooms, minPrice, maxPrice, sort)",
+        "responses": { "200": { "description": "OK" } }
+      },
+      "post": {
+        "tags": ["listings"],
+        "summary": "Create listing (owner/agent)",
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "201": { "description": "Created" } }
+      }
+    },
+    "/listings/{id}": {
+      "get": { "tags": ["listings"], "summary": "Listing detail (increments viewCount)", "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "OK" } } },
+      "put": { "tags": ["listings"], "summary": "Update own listing", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "OK" } } },
+      "delete": { "tags": ["listings"], "summary": "Delete own listing", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/listings/stats/mine": {
+      "get": { "tags": ["listings"], "summary": "View count stats for my listings", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/listings/{id}/enquiry": {
+      "post": {
+        "tags": ["listings"],
+        "summary": "Send enquiry to listing owner (contact + optional message)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["name", "phone"], "properties": { "name": { "type": "string" }, "phone": { "type": "string" }, "message": { "type": "string" } } } } }
+        },
+        "responses": { "201": { "description": "Created" } }
+      }
+    },
+    "/services/categories": {
+      "get": { "tags": ["services"], "summary": "Service categories (bilingual EN/FR)", "responses": { "200": { "description": "OK" } } }
+    },
+    "/services/providers": {
+      "get": { "tags": ["services"], "summary": "Browse providers (filters: type, city, verified)", "responses": { "200": { "description": "OK" } } }
+    },
+    "/services/providers/{id}": {
+      "get": { "tags": ["services"], "summary": "Provider detail + reviews", "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/services/providers": {
+      "post": {
+        "tags": ["services"],
+        "summary": "Create provider profile (provider role)",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["type", "title", "city"], "properties": { "type": { "type": "string" }, "title": { "type": "string" }, "city": { "type": "string" }, "services": { "type": "array", "items": { "type": "string" } }, "rates": { "type": "string" } } } } }
+        },
+        "responses": { "201": { "description": "Created" } }
+      }
+    },
+    "/services/providers/me/profile": {
+      "get": { "tags": ["services"], "summary": "My provider profile (provider role)", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/services/providers/me": {
+      "put": { "tags": ["services"], "summary": "Update my provider profile", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/bookings": {
+      "post": {
+        "tags": ["bookings"],
+        "summary": "Create booking (client)",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["serviceType", "date", "price"], "properties": { "serviceType": { "type": "string" }, "providerId": { "type": "string" }, "listingId": { "type": "string" }, "date": { "type": "string", "format": "date" }, "price": { "type": "integer" }, "requirements": { "type": "string" } } } } }
+        },
+        "responses": { "201": { "description": "Created, returns booking with ref" } }
+      }
+    },
+    "/bookings/mine": {
+      "get": { "tags": ["bookings"], "summary": "My bookings (client)", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/bookings/providers/mine": {
+      "get": { "tags": ["bookings"], "summary": "My bookings (provider)", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/bookings/{ref}": {
+      "get": { "tags": ["bookings"], "summary": "Get booking by ref", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "ref", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/bookings/{ref}/status": {
+      "put": {
+        "tags": ["bookings"],
+        "summary": "Update booking status (role-based transitions)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "ref", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["status"], "properties": { "status": { "type": "string", "enum": ["submitted", "under_review", "assigned", "confirmed", "in_progress", "completed", "cancelled"] } } } } }
+        },
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/concierge": {
+      "post": {
+        "tags": ["concierge"],
+        "summary": "Create concierge request (client)",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["type", "details"], "properties": { "type": { "type": "string", "enum": ["errand", "delivery", "airport", "admin", "travel", "bill"] }, "details": { "type": "string" } } } } }
+        },
+        "responses": { "201": { "description": "Created" } }
+      }
+    },
+    "/concierge/mine": {
+      "get": { "tags": ["concierge"], "summary": "My concierge requests (client)", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/concierge/providers/mine": {
+      "get": { "tags": ["concierge"], "summary": "Assigned concierge tasks (provider)", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/jobs": {
+      "get": {
+        "tags": ["jobs"],
+        "summary": "Browse active jobs (filters: q, category, city, type)",
+        "responses": { "200": { "description": "OK" } }
+      },
+      "post": {
+        "tags": ["jobs"],
+        "summary": "Post a job (employer)",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["title", "category", "location", "description"], "properties": { "title": { "type": "string" }, "category": { "type": "string" }, "city": { "type": "string" }, "type": { "type": "string" }, "description": { "type": "string" }, "salary": { "type": "string" } } } } }
+        },
+        "responses": { "201": { "description": "Created" } }
+      }
+    },
+    "/jobs/{id}": {
+      "get": { "tags": ["jobs"], "summary": "Job detail", "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/jobs/mine/applications": {
+      "get": { "tags": ["jobs"], "summary": "My job applications (seeker)", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/jobs/{id}/apply": {
+      "post": {
+        "tags": ["jobs"],
+        "summary": "Apply to a job (seeker)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["cvUrl"], "properties": { "cvUrl": { "type": "string" }, "certificates": { "type": "array", "items": { "type": "string" } }, "coverLetter": { "type": "string" } } } } }
+        },
+        "responses": { "201": { "description": "Created" } }
+      }
+    },
+    "/jobs/{id}/applications": {
+      "get": { "tags": ["jobs"], "summary": "Applications for a job (employer/admin)", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/jobs/{id}/applications/{appId}/status": {
+      "put": {
+        "tags": ["jobs"],
+        "summary": "Update application status (employer/admin)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "appId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["status"], "properties": { "status": { "type": "string", "enum": ["pending", "reviewed", "shortlisted", "rejected", "accepted"] } } } } }
+        },
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/payments/initiate": {
+      "post": {
+        "tags": ["payments"],
+        "summary": "Initiate MTN/Orange payment (simulated; creates pending payment + gateway ref)",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["provider", "amount", "phone"], "properties": { "provider": { "type": "string", "enum": ["mtn", "orange"] }, "amount": { "type": "integer" }, "phone": { "type": "string" }, "bookingRef": { "type": "string" }, "conciergeRef": { "type": "string" } } } } }
+        },
+        "responses": { "201": { "description": "Created" } }
+      }
+    },
+    "/payments/confirm": {
+      "post": {
+        "tags": ["payments"],
+        "summary": "Confirm payment (simulated success) and mark linked booking/concierge paid",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["paymentRef"], "properties": { "paymentRef": { "type": "string" } } } } }
+        },
+        "responses": { "200": { "description": "OK" } }
+      }
+    },
+    "/payments/webhook": {
+      "post": {
+        "tags": ["payments"],
+        "summary": "Provider callback (no auth; HMAC-verify in production)",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["ref", "status"], "properties": { "ref": { "type": "string" }, "status": { "type": "string", "enum": ["pending", "processing", "success", "failed", "refunded"] }, "transactionId": { "type": "string" } } } } }
+        },
+        "responses": { "200": { "description": "Acknowledged" } }
+      }
+    },
+    "/payments/{ref}": {
+      "get": { "tags": ["payments"], "summary": "Get my payment by ref", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "ref", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/payments/{ref}/receipt": {
+      "get": { "tags": ["payments"], "summary": "Payment receipt (successful only)", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "ref", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/payments/mine": {
+      "get": { "tags": ["payments"], "summary": "My payments", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/reviews": {
+      "post": {
+        "tags": ["reviews"],
+        "summary": "Create review (client/agent/provider/employer)",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["targetType", "targetId", "rating"], "properties": { "targetType": { "type": "string", "enum": ["listing", "agent", "provider", "employer"] }, "targetId": { "type": "string" }, "rating": { "type": "integer", "minimum": 1, "maximum": 5 }, "comment": { "type": "string" } } } } }
+        },
+        "responses": { "201": { "description": "Created" } }
+      }
+    },
+    "/reviews/target/{targetType}/{targetId}": {
+      "get": { "tags": ["reviews"], "summary": "Reviews for a target with average rating", "parameters": [{ "name": "targetType", "in": "path", "required": true, "schema": { "type": "string" } }, { "name": "targetId", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/reviews/mine": {
+      "get": { "tags": ["reviews"], "summary": "My reviews", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/notifications": {
+      "get": { "tags": ["notifications"], "summary": "My notifications + unread count", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/notifications/unread-count": {
+      "get": { "tags": ["notifications"], "summary": "Unread notification count", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/notifications/read-all": {
+      "put": { "tags": ["notifications"], "summary": "Mark all as read", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/notifications/{id}/read": {
+      "put": { "tags": ["notifications"], "summary": "Mark one as read", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/tickets": {
+      "post": {
+        "tags": ["tickets"],
+        "summary": "Create support ticket",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "type": "object", "required": ["subject", "message"], "properties": { "category": { "type": "string", "enum": ["complaint", "question", "report_listing", "report_provider", "refund", "other"] }, "subject": { "type": "string" }, "message": { "type": "string" } } } } }
+        },
+        "responses": { "201": { "description": "Created, returns ticket ref (TCK-...)" } }
+      }
+    },
+    "/tickets/mine": {
+      "get": { "tags": ["tickets"], "summary": "My tickets", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/tickets/{ref}": {
+      "get": { "tags": ["tickets"], "summary": "Ticket detail with message thread", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "ref", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/tickets/{ref}/messages": {
+      "post": { "tags": ["tickets"], "summary": "Reply to ticket (owner or admin)", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "ref", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/uploads": {
+      "post": {
+        "tags": ["uploads"],
+        "summary": "Upload file (multipart, field 'file'). max 10MB. Accepts jpg/png/webp/gif/pdf/heic",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": { "multipart/form-data": { "schema": { "type": "object", "properties": { "file": { "type": "string", "format": "binary" } } } } }
+        },
+        "responses": { "200": { "description": "OK, returns { url, provider }" } }
+      }
+    },
+    "/admin/users": {
+      "get": { "tags": ["admin"], "summary": "List users", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/admin/users/{id}/status": {
+      "put": { "tags": ["admin"], "summary": "Set user status (active/suspended/pending)", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/admin/users/{id}/verify": {
+      "put": { "tags": ["admin"], "summary": "Toggle verified badge", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/admin/listings": {
+      "get": { "tags": ["admin"], "summary": "All listings (any state)", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/admin/listings/{id}/status": {
+      "put": { "tags": ["admin"], "summary": "Approve/reject/suspend listing", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/admin/listings/{id}/verify": {
+      "put": { "tags": ["admin"], "summary": "Toggle verified badge on listing", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/admin/reviews": {
+      "get": { "tags": ["admin"], "summary": "All reviews incl. hidden", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/admin/reviews/{id}/status": {
+      "put": { "tags": ["admin"], "summary": "Hide/unhide review", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/admin/tickets": {
+      "get": { "tags": ["admin"], "summary": "All support tickets", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/admin/tickets/{ref}/status": {
+      "put": { "tags": ["admin"], "summary": "Ticket status/resolve/assign", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "ref", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/admin/stats/overview": {
+      "get": { "tags": ["admin"], "summary": "Dashboard headline counters + revenue", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/admin/stats/revenue": {
+      "get": { "tags": ["admin"], "summary": "Revenue by provider & by month", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "OK" } } }
+    },
+    "/admin/stats/listings": {
+      "get": { "tags": ["admin"], "summary": "Listings by state/status/city + top viewed", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "OK" } } }
+    }
+  },
+  "responses": {
+    "Error": {
+      "description": "Error",
+      "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+    }
+  }
+}
