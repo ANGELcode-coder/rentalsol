@@ -35,3 +35,4 @@ Requires: Node.js >= 18, MongoDB, Flutter SDK.
 - Full spec: [`docs/SRS.md`](docs/SRS.md)
 - API contract: [`docs/API.md`](docs/API.md)
 - Task breakdown: [`docs/TRELLO.md`](docs/TRELLO.md)
+- Technical documentation: [`docs/TECH.md`](docs/TECH.md)
